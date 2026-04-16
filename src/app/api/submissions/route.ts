@@ -75,3 +75,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const token = request.headers.get('cookie')?.split('jury_auth=')[1]?.split(';')[0];
+    const payload = token ? await verifyToken(token) : null;
+    
+    if (!payload || payload.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can edit submissions' }, { status: 403 });
+    }
+
+    const { id, url, creator_handle, format } = await request.json();
+    
+    if (!id || !url) {
+      return NextResponse.json({ error: 'ID and URL are required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    try {
+      const updatedSub = await Submission.findByIdAndUpdate(
+        id, 
+        { url, creator_handle: creator_handle || null, format: format || 'Unknown' },
+        { new: true }
+      );
+      if (!updatedSub) {
+        return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, submission: updatedSub });
+    } catch (dbError: any) {
+      if (dbError.code === 11000) {
+        return NextResponse.json({ error: 'This URL has already been submitted.' }, { status: 400 });
+      }
+      throw dbError;
+    }
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
+  }
+}

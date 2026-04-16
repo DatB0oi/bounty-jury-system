@@ -23,6 +23,7 @@ export default function Home() {
   const [newHandle, setNewHandle] = useState('');
   const [newFormat, setNewFormat] = useState('Thread');
   const [addError, setAddError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Grading Config
   const [deadline, setDeadline] = useState<string>('');
@@ -32,7 +33,7 @@ export default function Home() {
 
   // Modals
   const [activeSubId, setActiveSubId] = useState<string | null>(null);
-  const [scores, setScores] = useState({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5 });
+  const [scores, setScores] = useState({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5, comment: '' });
 
   const fetchContext = async () => {
     try {
@@ -97,19 +98,26 @@ export default function Home() {
     setAddError('');
     if (!newUrl) return;
     
-    const res = await fetch('/api/submissions', {
-      method: 'POST',
+    const url = '/api/submissions';
+    const method = editingId ? 'PUT' : 'POST';
+    const bodyPayload = editingId 
+      ? { id: editingId, url: newUrl, creator_handle: newHandle, format: newFormat }
+      : { url: newUrl, creator_handle: newHandle, format: newFormat };
+
+    const res = await fetch(url, {
+      method: method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: newUrl, creator_handle: newHandle, format: newFormat })
+      body: JSON.stringify(bodyPayload)
     });
     const data = await res.json();
     if(res.ok && data.success) {
       setNewUrl('');
       setNewHandle('');
       setNewFormat('Thread');
+      setEditingId(null);
       fetchSubmissions();
     } else {
-      setAddError(data.error || 'Failed to add submission');
+      setAddError(data.error || 'Failed to save submission');
     }
   };
 
@@ -126,10 +134,11 @@ export default function Home() {
         originality: s.originality,
         culture: s.culture,
         visuals: s.visuals,
-        impact: s.impact
+        impact: s.impact,
+        comment: s.comment || ''
       });
     } else {
-      setScores({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5 });
+      setScores({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5, comment: '' });
     }
   };
 
@@ -177,7 +186,7 @@ export default function Home() {
             
             {/* Adds */}
             <div className="card" style={{ height: 'fit-content' }}>
-              <h2 className="text-xl fw-bold mb-4">Add Submission</h2>
+              <h2 className="text-xl fw-bold mb-4">{editingId ? 'Edit Submission' : 'Add Submission'}</h2>
               {addError && <p style={{ color: 'var(--ava-red)', marginBottom: '1rem' }}>{addError}</p>}
               <form onSubmit={handleAddSubmission} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <input 
@@ -190,11 +199,19 @@ export default function Home() {
                 />
                 <select value={newFormat} onChange={e => setNewFormat(e.target.value)}>
                   <option>Thread</option>
+                  <option>Post</option>
                   <option>Video</option>
                   <option>Article</option>
                   <option>Art / Graphic</option>
                 </select>
-                <button type="submit" className="btn-primary mt-2">Save Link</button>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <button type="submit" className="btn-primary" style={{flex: 1}}>{editingId ? 'Update Link' : 'Save Link'}</button>
+                  {editingId && (
+                    <button type="button" className="btn-secondary" onClick={() => {
+                        setEditingId(null); setNewUrl(''); setNewHandle(''); setNewFormat('Thread'); setAddError('');
+                    }}>Cancel</button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -239,7 +256,18 @@ export default function Home() {
                     {sub.avg_score ? parseFloat(sub.avg_score.toString()).toFixed(1) : '--'}/50
                   </div>
                   {!isDeadlinePassed && (
-                    <button className="btn-secondary mt-2 text-sm" onClick={() => openGradingModal(sub.id)}>Grade This</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', marginTop: '0.5rem' }}>
+                      <button className="btn-secondary text-sm" onClick={() => openGradingModal(sub.id)}>Grade This</button>
+                      {user.role === 'admin' && (
+                        <button className="text-sm" style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => {
+                          setEditingId(sub.id);
+                          setNewUrl(sub.url);
+                          setNewHandle(sub.creator_handle);
+                          setNewFormat(sub.format || 'Thread');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}>Edit</button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -312,10 +340,21 @@ export default function Home() {
               </div>
             ))}
 
+            <div className="mb-4 mt-2">
+              <span className="fw-medium mb-2" style={{ display: 'block' }}>Feedback / Comments (Optional)</span>
+              <textarea 
+                rows={3} 
+                placeholder="Leave a comment for the creator or a note for other judges..."
+                value={scores.comment} 
+                onChange={(e) => setScores({...scores, comment: e.target.value})}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', color: 'white', border: '1px solid var(--glass-border)', outline: 'none', resize: 'vertical' }}
+              />
+            </div>
+
             <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button className="btn-secondary" onClick={() => setActiveSubId(null)}>Cancel</button>
               <button className="btn-primary" onClick={submitScore}>
-                Submit Score (Tot: {Object.values(scores).reduce((a,b)=>a+b, 0)})
+                Submit Score (Tot: {scores.accuracy + scores.originality + scores.culture + scores.visuals + scores.impact})
               </button>
             </div>
           </div>

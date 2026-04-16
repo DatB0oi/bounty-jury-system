@@ -23,6 +23,7 @@ export interface IScore extends Document {
   visuals: number;
   impact: number;
   total_score: number;
+  comment?: string;
 }
 
 export interface IConfig extends Document {
@@ -52,7 +53,8 @@ const ScoreSchema: Schema = new Schema({
   culture: { type: Number, required: true },
   visuals: { type: Number, required: true },
   impact: { type: Number, required: true },
-  total_score: { type: Number, required: true }
+  total_score: { type: Number, required: true },
+  comment: { type: String }
 });
 
 ScoreSchema.index({ submission_id: 1, judge_id: 1 }, { unique: true });

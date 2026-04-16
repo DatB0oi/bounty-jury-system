@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { submission_id, judge_id, accuracy, originality, culture, visuals, impact } = body;
+    const { submission_id, judge_id, accuracy, originality, culture, visuals, impact, comment } = body;
     
     if (!submission_id || !judge_id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     // Upsert the score
     await Score.findOneAndUpdate(
       { submission_id, judge_id },
-      { accuracy, originality, culture, visuals, impact, total_score },
+      { accuracy, originality, culture, visuals, impact, total_score, comment },
       { upsert: true, new: true }
     );
 
