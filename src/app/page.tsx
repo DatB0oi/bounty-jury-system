@@ -1,0 +1,326 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+type Submission = {
+  id: string;
+  url: string;
+  creator_handle: string;
+  format: string;
+  created_at: string;
+  avg_score: number | null;
+  score_count: number;
+};
+
+export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  
+  // Submission Add
+  const [newUrl, setNewUrl] = useState('');
+  const [newHandle, setNewHandle] = useState('');
+  const [newFormat, setNewFormat] = useState('Thread');
+  const [addError, setAddError] = useState('');
+
+  // Grading Config
+  const [deadline, setDeadline] = useState<string>('');
+  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false);
+  const [deadlineError, setDeadlineError] = useState('');
+  const [deadlineSuccess, setDeadlineSuccess] = useState('');
+
+  // Modals
+  const [activeSubId, setActiveSubId] = useState<string | null>(null);
+  const [scores, setScores] = useState({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5 });
+
+  const fetchContext = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.user) {
+        setUser(data.user);
+      }
+    } catch {}
+
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      if (data.deadline) {
+        setDeadline(new Date(data.deadline).toISOString().slice(0,16)); // format for datetime-local
+        if (new Date() > new Date(data.deadline)) {
+          setIsDeadlinePassed(true);
+        }
+      }
+    } catch {}
+    
+    fetchSubmissions();
+  };
+
+  const fetchSubmissions = async () => {
+    const res = await fetch('/api/submissions');
+    const data = await res.json();
+    setSubmissions(data || []);
+  };
+
+  useEffect(() => {
+    fetchContext();
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/login');
+  };
+
+  const handleUpdateDeadline = async () => {
+    setDeadlineError(''); setDeadlineSuccess('');
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deadline })
+      });
+      const data = await res.json();
+      if(data.success) {
+         setDeadlineSuccess('Deadline updated');
+         setIsDeadlinePassed(new Date() > new Date(deadline));
+      } else {
+         setDeadlineError('Failed to update');
+      }
+    } catch(err) {
+      setDeadlineError('Server Error');
+    }
+  };
+
+  const handleAddSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError('');
+    if (!newUrl) return;
+    
+    const res = await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: newUrl, creator_handle: newHandle, format: newFormat })
+    });
+    const data = await res.json();
+    if(res.ok && data.success) {
+      setNewUrl('');
+      setNewHandle('');
+      setNewFormat('Thread');
+      fetchSubmissions();
+    } else {
+      setAddError(data.error || 'Failed to add submission');
+    }
+  };
+
+  const openGradingModal = async (subId: string) => {
+    if (isDeadlinePassed) return;
+    setActiveSubId(subId);
+    // Fetch existing
+    const res = await fetch(`/api/scores?submissionId=${subId}&judgeId=${user.id}`);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const s = data[0];
+      setScores({
+        accuracy: s.accuracy,
+        originality: s.originality,
+        culture: s.culture,
+        visuals: s.visuals,
+        impact: s.impact
+      });
+    } else {
+      setScores({ accuracy: 5, originality: 5, culture: 5, visuals: 5, impact: 5 });
+    }
+  };
+
+  const submitScore = async () => {
+    if (!user || !activeSubId || isDeadlinePassed) return;
+    await fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        submission_id: activeSubId,
+        judge_id: user.id,
+        ...scores
+      })
+    });
+    setActiveSubId(null);
+    fetchSubmissions();
+  };
+
+  if(!user) return null; // loading state essentially
+
+  return (
+    <div>
+      <div className="card mb-8" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 className="text-xl fw-bold">Active Judge: <span style={{color: 'var(--ava-red)'}}>{user.name}</span></h2>
+          <p className="text-sm" style={{color: '#aaa'}}>Role: {user.role.toUpperCase()}</p>
+        </div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {isDeadlinePassed ? (
+            <span style={{ color: 'var(--ava-red)', fontWeight: 'bold', padding: '0.5rem 1rem', background: 'rgba(255,57,74,0.1)', borderRadius: '8px' }}>
+              ⚠️ Grading is Closed
+            </span>
+          ) : (
+            <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Active Grading Period</span>
+          )}
+          <button className="btn-secondary" onClick={handleLogout}>Log Out</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: user.role === 'admin' ? '1fr 2fr' : '1fr', gap: '2rem' }}>
+        
+        {/* ADMIN SECTION */}
+        {user.role === 'admin' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Adds */}
+            <div className="card" style={{ height: 'fit-content' }}>
+              <h2 className="text-xl fw-bold mb-4">Add Submission</h2>
+              {addError && <p style={{ color: 'var(--ava-red)', marginBottom: '1rem' }}>{addError}</p>}
+              <form onSubmit={handleAddSubmission} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input 
+                  type="url" placeholder="https://..." 
+                  value={newUrl} onChange={e => setNewUrl(e.target.value)} required
+                />
+                <input 
+                  type="text" placeholder="@creator_handle" 
+                  value={newHandle} onChange={e => setNewHandle(e.target.value)} 
+                />
+                <select value={newFormat} onChange={e => setNewFormat(e.target.value)}>
+                  <option>Thread</option>
+                  <option>Video</option>
+                  <option>Article</option>
+                  <option>Art / Graphic</option>
+                </select>
+                <button type="submit" className="btn-primary mt-2">Save Link</button>
+              </form>
+            </div>
+
+            {/* Deadline */}
+            <div className="card" style={{ height: 'fit-content' }}>
+              <h2 className="text-xl fw-bold mb-4">Set Final Deadline</h2>
+              <p className="text-sm mb-4" style={{color: '#aaa'}}>Block judges from voting after this date.</p>
+              
+              {deadlineError && <p style={{ color: 'var(--ava-red)' }}>{deadlineError}</p>}
+              {deadlineSuccess && <p style={{ color: '#4CAF50' }}>{deadlineSuccess}</p>}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input 
+                  type="datetime-local" 
+                  value={deadline}
+                  onChange={e => setDeadline(e.target.value)}
+                />
+                <button onClick={handleUpdateDeadline} className="btn-primary">Update Deadline</button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* LEADERBOARD/LIST */}
+        <div className="card">
+          <h2 className="text-xl fw-bold mb-4">Bounty Leaderboard</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {submissions.map(sub => (
+              <div key={sub.id} style={{ 
+                padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderLeft: sub.avg_score && sub.avg_score >= 28 ? '4px solid #4CAF50' : '4px solid var(--glass-border)'
+              }}>
+                <div style={{ overflow: 'hidden' }}>
+                  <h3 className="fw-bold" style={{ fontSize: '1.1rem' }}>{sub.creator_handle || 'Unknown'} <span className="text-xs" style={{ color: '#aaa', marginLeft: '8px' }}>{sub.format}</span></h3>
+                  <a href={sub.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ava-blue)', textDecoration: 'underline', fontSize: '0.9rem', wordBreak: 'break-all' }}>{sub.url}</a>
+                  <p className="text-sm mt-1">Status: {sub.score_count} judge(s) voted</p>
+                </div>
+                <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                  <div className="text-xl fw-bold" style={{ color: sub.avg_score && sub.avg_score >= 28 ? '#4CAF50' : 'var(--white)' }}>
+                    {sub.avg_score ? parseFloat(sub.avg_score.toString()).toFixed(1) : '--'}/50
+                  </div>
+                  {!isDeadlinePassed && (
+                    <button className="btn-secondary mt-2 text-sm" onClick={() => openGradingModal(sub.id)}>Grade This</button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {submissions.length === 0 && <p style={{ color: '#aaa' }}>No submissions yet.</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* SCORING MODAL */}
+      {activeSubId && !isDeadlinePassed && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100
+        }}>
+          <div className="card" style={{ width: '600px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden' }}>
+            <h2 className="text-xl fw-bold mb-2">Evaluate Submission</h2>
+            <p className="text-sm mb-4" style={{ color: '#aaa' }}>Score 1-10 on each criteria (Max 50). Threshold for raffle: 28+.</p>
+
+            {[
+              { 
+                key: 'accuracy', 
+                title: 'Technical Accuracy', 
+                desc: 'Is the information about Club HashCash, the Hashathon, and Avalanche correct and well-researched?',
+                tooltip: '1-3: Multiple factual errors or vague, unresearched content\n4-6: Mostly accurate but missing key details or context\n7-9: Accurate and well-researched with clear understanding of the topic\n10: Flawless accuracy, demonstrates deep knowledge of HashCash and Avalanche'
+              },
+              { 
+                key: 'originality', 
+                title: 'Originality & Authenticity', 
+                desc: 'Does the content feel genuinely human? Does it show a real perspective rather than generic AI output?',
+                tooltip: '1-3: Feels AI-generated, generic, or copy-pasted, could apply to any project\n4-6: Some original voice but still relies heavily on generic phrasing\n7-9: Clearly human, with a personal angle or original framing\n10: Distinct voice, creative take, stands out from any other submission'
+              },
+              { 
+                key: 'culture', 
+                title: 'Community & Culture Fit', 
+                desc: 'Does the content capture the spirit, identity, or vibe of Club HashCash authentically?',
+                tooltip: '1-3: No connection to HashCash culture or community, feels generic\n4-6: Mentions HashCash but doesn\'t really capture what makes it unique\n7-9: Shows understanding of the community and represents it well\n10: Deeply embedded in HashCash culture, feels like it came from within the community'
+              },
+              { 
+                key: 'visuals', 
+                title: 'Visual & Presentation Quality', 
+                desc: 'Is the content well-structured and visually polished? (applies to all formats, thread, article, video)',
+                tooltip: '1-3: Poor structure, hard to follow, no visuals or very low quality\n4-6: Functional but minimal effort on presentation or visuals\n7-9: Well-structured with at least 2 quality visuals or good editing\n10: Highly polished, visually compelling, strong formatting throughout'
+              },
+              { 
+                key: 'impact', 
+                title: 'Educational & Engagement Value', 
+                desc: 'Does the content teach the audience something useful and make them want to learn more about HashCash or the Hashathon?',
+                tooltip: '1-3: Doesn\'t inform or engage, surface level at best\n4-6: Somewhat informative but doesn\'t motivate further action\n7-9: Clearly educates and sparks interest in HashCash or the Hashathon\n10: Exceptionally informative and compelling, would make someone new want to participate immediately'
+              },
+            ].map(c => (
+              <div key={c.key} className="mb-4">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                  <span className="fw-medium" style={{ display: 'flex', alignItems: 'center' }}>
+                    {c.title}
+                    <div className="tooltip">ⓘ
+                      <div className="tooltiptext">{c.tooltip}</div>
+                    </div>
+                  </span>
+                  <span style={{ color: 'var(--white)' }} className="fw-bold">{scores[c.key as keyof typeof scores]}</span>
+                </div>
+                <p className="text-xs mb-2" style={{ color: '#888' }}>{c.desc}</p>
+                <input 
+                  type="range" min="1" max="10" 
+                  value={scores[c.key as keyof typeof scores]} 
+                  onChange={(e) => setScores({...scores, [c.key]: parseInt(e.target.value)})}
+                  style={{ cursor: 'pointer', accentColor: '#ffffff' }}
+                />
+              </div>
+            ))}
+
+            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setActiveSubId(null)}>Cancel</button>
+              <button className="btn-primary" onClick={submitScore}>
+                Submit Score (Tot: {Object.values(scores).reduce((a,b)=>a+b, 0)})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
