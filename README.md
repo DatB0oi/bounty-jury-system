@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bounty Jury System
 
-## Getting Started
+A dedicated judging platform designed for the evaluation and scoring of bounty submissions. This system provides a professional, web-based portal with role-based access for judges and administrators, allowing for collaborative and secure assessment of submitted works based on a predefined scoring rubric.
 
-First, run the development server:
+## ✨ Features
+
+- **Role-Based Access Control (RBAC)**:
+  - **Judges**: Can evaluate submissions according to a 4-point criteria rubric.
+  - **Admins**: Have extended capabilities and oversight on the evaluation process.
+- **Secure Authentication**: Uses bcrypt for secure password hashing and enforces mandatory first-login password changes for enhanced security.
+- **Dynamic Evaluation Panel**: Interactive UI sliders with tooltips for precise scoring based on:
+  - Adherence to Prompts
+  - Creativity
+  - Quality
+  - Presentation & Effort
+- **Real-time Leaderboard**: Automatically calculates average scores across all judges and highlights top submissions.
+- **Modern Tech Stack**: Fast and responsive frontend built with Next.js and React.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+You need [Node.js](https://nodejs.org/) installed along with a MongoDB database (e.g., MongoDB Atlas).
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/DatB0oi/bounty-jury-system.git
+   cd bounty-jury-system
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables:**
+   Create a `.env.local` file in the root directory and configure your MongoDB connection string:
+   ```env
+   MONGODB_URI="mongodb+srv://<user>:<password>@cluster.mongodb.net/bounty?retryWrites=true&w=majority"
+   ```
+   *Note: Never commit your `.env.local` file to version control.*
+
+### Seeding Initial Data
+
+To initialize the database with default judges, roles, and settings, run the seed script:
+
+```bash
+node seedMongo.js
+```
+*Note: The default credentials for judges are defined in this script. Upon their first log-in, they will be forced to set their own custom password.*
+
+### Running the server
+
+Start the Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to use the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠 Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Language**: TypeScript
+- **Styling**: CSS Modules & Vanilla CSS properties
+- **Database**: MongoDB (via Mongoose ORM)
+- **Security**: bcryptjs
 
-## Learn More
+## 📝 Usage Guide
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Login**: Judges and admins access the portal with their default credentials.
+2. **First Login**: On the initial sign-in, users are prompted and forced to set a secure, private password.
+3. **Evaluation Phase**: Select a participant/submission from the main dashboard and use the rating sliders to evaluate it across the 4 key metrics.
+4. **Scoring & Results**: The platform records the evaluation and calculates average scores automatically, adjusting the global leaderboard in real-time.
