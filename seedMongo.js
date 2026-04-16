@@ -23,7 +23,7 @@ async function seed() {
     const judgesList = [
       { name: 'DatBoi', role: 'admin' },
       { name: 'Luke152', role: 'judge' },
-      { name: 'Khay/Lavender', role: 'judge' },
+      { name: 'Lavender', role: 'judge' },
       { name: 'Feezy', role: 'judge' },
       { name: 'CryptoChimba', role: 'judge' },
       { name: 'Promise_Wils', role: 'judge' },
