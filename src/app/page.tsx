@@ -201,29 +201,22 @@ export default function Home() {
       </div>
 
       {/* JUDGES PROGRESS */}
-      <div className="card mb-8">
-        <h2 className="text-xl fw-bold mb-4">Judges Progress</h2>
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="card mb-8" style={{ padding: '1rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 className="text-sm fw-bold" style={{ color: '#aaa', margin: 0, marginRight: '1rem' }}>JURY PROGRESS</h2>
           {progressData?.judges.map(j => (
             <div key={j.id} style={{ 
-              flex: '1 1 150px', maxWidth: '200px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-              border: '1px solid var(--glass-border)'
+              display: 'flex', alignItems: 'center', gap: '0.75rem', 
+              background: 'rgba(0,0,0,0.3)', padding: '0.4rem 1rem 0.4rem 0.4rem', borderRadius: '50px',
+              border: j.missing === 0 ? '1px solid #4CAF50' : '1px solid var(--glass-border)'
             }}>
-              <img src={getPfpUrl(j.name)} alt={j.name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', marginBottom: '0.5rem' }} />
-              <span className="fw-bold">{j.name}</span>
-              <span className="text-xs" style={{ color: '#aaa', marginBottom: '0.5rem' }}>{j.role}</span>
-              
-              <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', marginBottom: '0.5rem', overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: j.missing === 0 ? '#4CAF50' : 'var(--ava-red)', width: `${(j.rated / progressData.totalSubmissions) * 100}%` }}></div>
+              <img src={getPfpUrl(j.name)} alt={j.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span className="fw-bold text-xs" style={{ lineHeight: 1, marginBottom: '2px' }}>{j.name}</span>
+                <span style={{ fontSize: '0.65rem', color: j.missing === 0 ? '#4CAF50' : '#888', fontWeight: 'bold' }}>
+                  {j.rated} / {progressData.totalSubmissions}
+                </span>
               </div>
-              
-              <span className="text-xs">{j.rated} / {progressData.totalSubmissions} Rated</span>
-              {j.missing === 0 ? (
-                <span className="text-xs" style={{ color: '#4CAF50', fontWeight: 'bold' }}>Completed!</span>
-              ) : (
-                <span className="text-xs" style={{ color: 'var(--ava-red)' }}>{j.missing} Missing</span>
-              )}
             </div>
           ))}
         </div>
