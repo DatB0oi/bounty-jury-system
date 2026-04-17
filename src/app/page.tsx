@@ -292,12 +292,15 @@ export default function Home() {
           <h2 className="text-xl fw-bold mb-4">Bounty Leaderboard</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {submissions.map(sub => (
-              <div key={sub.id}>
-                <div style={{ 
-                  padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                borderLeft: sub.avg_score && sub.avg_score >= 28 ? '4px solid #4CAF50' : '4px solid var(--glass-border)'
+              <div key={sub.id} style={{ 
+                background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
+                borderLeft: sub.avg_score && sub.avg_score >= 28 ? '4px solid #4CAF50' : '4px solid var(--glass-border)',
+                display: 'flex', flexDirection: 'column'
               }}>
+                <div style={{ 
+                  padding: '1rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
                 <div style={{ overflow: 'hidden' }}>
                   <h3 className="fw-bold" style={{ fontSize: '1.1rem' }}>{sub.creator_handle || 'Unknown'} <span className="text-xs" style={{ color: '#aaa', marginLeft: '8px' }}>{sub.format}</span></h3>
                   <a href={sub.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ava-blue)', textDecoration: 'underline', fontSize: '0.9rem', wordBreak: 'break-all' }}>{sub.url}</a>
@@ -329,7 +332,7 @@ export default function Home() {
               
               {/* EXPANDED SCORES */}
               {expandedSubId === sub.id && sub.scores && sub.scores.length > 0 && (
-                <div style={{ marginTop: '-1rem', marginBottom: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '0 0 8px 8px', border: '1px solid var(--glass-border)', borderTop: 'none' }}>
+                <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '0 0 8px 8px', borderTop: '1px solid var(--glass-border)' }}>
                   <h4 className="text-sm fw-bold mb-3" style={{ color: '#aaa' }}>Score Breakdown</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {sub.scores.map((score: any) => {
@@ -364,8 +367,6 @@ export default function Home() {
                   </div>
                 </div>
               )}
-              
-              <div key={`spacer-${sub.id}`} />
               </div>
             ))}
             {submissions.length === 0 && <p style={{ color: '#aaa' }}>No submissions yet.</p>}
