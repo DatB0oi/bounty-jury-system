@@ -24,7 +24,8 @@ export async function GET() {
           format: 1,
           created_at: 1,
           avg_score: { $avg: '$scores.total_score' },
-          score_count: { $size: '$scores' }
+          score_count: { $size: '$scores' },
+          scores: 1
         }
       },
       {

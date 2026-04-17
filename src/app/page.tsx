@@ -11,12 +11,14 @@ type Submission = {
   created_at: string;
   avg_score: number | null;
   score_count: number;
+  scores: any[]; // added for transparency
 };
 
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [progressData, setProgressData] = useState<{ totalSubmissions: number, judges: any[] } | null>(null);
   
   // Submission Add
   const [newUrl, setNewUrl] = useState('');
@@ -56,6 +58,15 @@ export default function Home() {
     } catch {}
     
     fetchSubmissions();
+    fetchProgress();
+  };
+
+  const fetchProgress = async () => {
+    try {
+      const res = await fetch('/api/judges/progress');
+      const data = await res.json();
+      setProgressData(data);
+    } catch {}
   };
 
   const fetchSubmissions = async () => {
@@ -155,7 +166,18 @@ export default function Home() {
     });
     setActiveSubId(null);
     fetchSubmissions();
+    fetchProgress();
   };
+
+  const getPfpUrl = (name: string) => {
+    if (name.toLowerCase() === 'lavender') return '/pfp/Khay.jpg';
+    const knownPfps = ['Feezy', 'GRiim', 'Khay', 'Luke152', 'Promise_wils', 'datboi'];
+    const match = knownPfps.find(p => p.toLowerCase() === name.toLowerCase());
+    if (match) return `/pfp/${match}.jpg`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
+  };
+
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
 
   if(!user) return null; // loading state essentially
 
@@ -236,13 +258,43 @@ export default function Home() {
           </div>
         )}
 
+        {/* JUDGES PROGRESS */}
+        <div className="card" style={{ gridColumn: '1 / -1' }}>
+          <h2 className="text-xl fw-bold mb-4">Judges Progress</h2>
+          <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
+            {progressData?.judges.map(j => (
+              <div key={j.id} style={{ 
+                minWidth: '150px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+                border: '1px solid var(--glass-border)'
+              }}>
+                <img src={getPfpUrl(j.name)} alt={j.name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', marginBottom: '0.5rem' }} />
+                <span className="fw-bold">{j.name}</span>
+                <span className="text-xs" style={{ color: '#aaa', marginBottom: '0.5rem' }}>{j.role}</span>
+                
+                <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', marginBottom: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: j.missing === 0 ? '#4CAF50' : 'var(--ava-red)', width: `${(j.rated / progressData.totalSubmissions) * 100}%` }}></div>
+                </div>
+                
+                <span className="text-xs">{j.rated} / {progressData.totalSubmissions} Rated</span>
+                {j.missing === 0 ? (
+                  <span className="text-xs" style={{ color: '#4CAF50', fontWeight: 'bold' }}>Completed!</span>
+                ) : (
+                  <span className="text-xs" style={{ color: 'var(--ava-red)' }}>{j.missing} Missing</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* LEADERBOARD/LIST */}
         <div className="card">
           <h2 className="text-xl fw-bold mb-4">Bounty Leaderboard</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {submissions.map(sub => (
-              <div key={sub.id} style={{ 
-                padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
+              <div key={sub.id}>
+                <div style={{ 
+                  padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 borderLeft: sub.avg_score && sub.avg_score >= 28 ? '4px solid #4CAF50' : '4px solid var(--glass-border)'
               }}>
@@ -258,6 +310,9 @@ export default function Home() {
                   {!isDeadlinePassed && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', marginTop: '0.5rem' }}>
                       <button className="btn-secondary text-sm" onClick={() => openGradingModal(sub.id)}>Grade This</button>
+                      <button className="text-sm" style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setExpandedSubId(expandedSubId === sub.id ? null : sub.id)}>
+                        {expandedSubId === sub.id ? 'Hide Scores' : 'Show Scores'}
+                      </button>
                       {user.role === 'admin' && (
                         <button className="text-sm" style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => {
                           setEditingId(sub.id);
@@ -270,6 +325,47 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+              </div>
+              
+              {/* EXPANDED SCORES */}
+              {expandedSubId === sub.id && sub.scores && sub.scores.length > 0 && (
+                <div style={{ marginTop: '-1rem', marginBottom: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '0 0 8px 8px', border: '1px solid var(--glass-border)', borderTop: 'none' }}>
+                  <h4 className="text-sm fw-bold mb-3" style={{ color: '#aaa' }}>Score Breakdown</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {sub.scores.map((score: any) => {
+                      // Find judge name from progressData
+                      const judge = progressData?.judges.find(j => j.id === score.judge_id);
+                      const judgeName = judge ? judge.name : 'Unknown Judge';
+                      
+                      return (
+                        <div key={score._id} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                          <img src={getPfpUrl(judgeName)} alt={judgeName} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span className="fw-bold">{judgeName}</span>
+                              <span className="fw-bold" style={{ color: 'var(--ava-red)' }}>{score.total_score}/50</span>
+                            </div>
+                            <div className="text-xs mt-1" style={{ display: 'flex', gap: '0.5rem', color: '#aaa' }}>
+                              <span>Acc: {score.accuracy}</span>
+                              <span>Org: {score.originality}</span>
+                              <span>Cul: {score.culture}</span>
+                              <span>Vis: {score.visuals}</span>
+                              <span>Imp: {score.impact}</span>
+                            </div>
+                            {score.comment && (
+                              <div className="text-sm mt-2" style={{ fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px', borderLeft: '2px solid var(--glass-border)' }}>
+                                "{score.comment}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              <div key={`spacer-${sub.id}`} />
               </div>
             ))}
             {submissions.length === 0 && <p style={{ color: '#aaa' }}>No submissions yet.</p>}
