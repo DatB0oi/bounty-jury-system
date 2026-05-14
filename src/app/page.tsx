@@ -304,7 +304,7 @@ export default function Home() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%', minWidth: '120px' }}>
                     <div style={{ background: 'rgba(192, 192, 192, 0.1)', border: '2px solid silver', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <span style={{ fontSize: '2rem' }}>🥈</span>
-                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}>{top3[1].creator_handle || 'Unknown'}</h3>
+                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}><a href={top3[1].url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>{top3[1].creator_handle || 'Unknown'}</a></h3>
                       <span className="text-xs fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[1].avg_score!.toString()).toFixed(1)}/50</span>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function Home() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '35%', minWidth: '140px' }}>
                     <div style={{ background: 'rgba(255, 215, 0, 0.15)', border: '2px solid gold', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '150px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' }}>
                       <span style={{ fontSize: '3rem' }}>🥇</span>
-                      <h3 className="fw-bold mt-2" style={{ wordBreak: 'break-all' }}>{top3[0].creator_handle || 'Unknown'}</h3>
+                      <h3 className="fw-bold mt-2" style={{ wordBreak: 'break-all' }}><a href={top3[0].url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>{top3[0].creator_handle || 'Unknown'}</a></h3>
                       <span className="text-sm fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[0].avg_score!.toString()).toFixed(1)}/50</span>
                     </div>
                   </div>
@@ -326,7 +326,7 @@ export default function Home() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%', minWidth: '120px' }}>
                     <div style={{ background: 'rgba(205, 127, 50, 0.1)', border: '2px solid #cd7f32', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <span style={{ fontSize: '1.5rem' }}>🥉</span>
-                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}>{top3[2].creator_handle || 'Unknown'}</h3>
+                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}><a href={top3[2].url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>{top3[2].creator_handle || 'Unknown'}</a></h3>
                       <span className="text-xs fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[2].avg_score!.toString()).toFixed(1)}/50</span>
                     </div>
                   </div>
@@ -343,7 +343,7 @@ export default function Home() {
                     {raffleCandidates.map((c, i) => (
                       <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <span style={{ color: '#aaa' }}>#{i + 4}</span>
-                        <span className="fw-bold">{c.creator_handle || 'Unknown'}</span>
+                        <span className="fw-bold"><a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>{c.creator_handle || 'Unknown'}</a></span>
                         <span style={{ color: '#4CAF50' }}>({parseFloat(c.avg_score!.toString()).toFixed(1)})</span>
                       </div>
                     ))}
