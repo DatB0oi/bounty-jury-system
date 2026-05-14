@@ -28,7 +28,8 @@ async function seed() {
       { name: 'CryptoChimba', role: 'judge' },
       { name: 'Promise_Wils', role: 'judge' },
       { name: 'GRiim', role: 'judge' },
-      { name: 'test', role: 'judge' }
+      { name: 'test', role: 'judge' },
+      { name: 'Armin', role: 'judge' }
     ];
 
     const defaultPassword = 'BountyTeam1!';
