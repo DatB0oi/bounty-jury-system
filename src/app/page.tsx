@@ -181,6 +181,15 @@ export default function Home() {
 
   if(!user) return null; // loading state essentially
 
+  const sortedSubmissions = [...submissions].filter(s => s.avg_score !== null).sort((a, b) => {
+    if (b.avg_score !== a.avg_score) return (b.avg_score || 0) - (a.avg_score || 0);
+    if (b.score_count !== a.score_count) return b.score_count - a.score_count;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  const top3 = sortedSubmissions.slice(0, 3);
+  const raffleCandidates = sortedSubmissions.slice(3).filter(s => (s.avg_score || 0) >= 30);
+
   return (
     <div>
       <div className="card mb-8" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -280,6 +289,72 @@ export default function Home() {
           </div>
         )}
 
+        {/* RIGHT COLUMN */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* PODIUM */}
+          {top3.length > 0 && (
+            <div className="card" style={{ background: 'linear-gradient(145deg, rgba(30,30,35,0.9), rgba(15,15,20,0.9))', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <h2 className="text-xl fw-bold mb-6" style={{ textAlign: 'center', color: '#fff' }}>🏆 Current Podium</h2>
+              
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                
+                {/* 2nd Place */}
+                {top3[1] && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%', minWidth: '120px' }}>
+                    <div style={{ background: 'rgba(192, 192, 192, 0.1)', border: '2px solid silver', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '2rem' }}>🥈</span>
+                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}>{top3[1].creator_handle || 'Unknown'}</h3>
+                      <span className="text-xs fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[1].avg_score!.toString()).toFixed(1)}/50</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 1st Place */}
+                {top3[0] && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '35%', minWidth: '140px' }}>
+                    <div style={{ background: 'rgba(255, 215, 0, 0.15)', border: '2px solid gold', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '150px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' }}>
+                      <span style={{ fontSize: '3rem' }}>🥇</span>
+                      <h3 className="fw-bold mt-2" style={{ wordBreak: 'break-all' }}>{top3[0].creator_handle || 'Unknown'}</h3>
+                      <span className="text-sm fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[0].avg_score!.toString()).toFixed(1)}/50</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3rd Place */}
+                {top3[2] && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%', minWidth: '120px' }}>
+                    <div style={{ background: 'rgba(205, 127, 50, 0.1)', border: '2px solid #cd7f32', padding: '1rem', borderRadius: '12px 12px 0 0', width: '100%', textAlign: 'center', height: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🥉</span>
+                      <h3 className="fw-bold text-sm mt-2" style={{ wordBreak: 'break-all' }}>{top3[2].creator_handle || 'Unknown'}</h3>
+                      <span className="text-xs fw-bold" style={{ color: '#4CAF50' }}>{parseFloat(top3[2].avg_score!.toString()).toFixed(1)}/50</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Raffle Candidates */}
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                <h3 className="text-sm fw-bold mb-3" style={{ color: '#aaa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🎟️ Eligible for Raffle (Score &ge; 30)
+                </h3>
+                {raffleCandidates.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {raffleCandidates.map((c, i) => (
+                      <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <span style={{ color: '#aaa' }}>#{i + 4}</span>
+                        <span className="fw-bold">{c.creator_handle || 'Unknown'}</span>
+                        <span style={{ color: '#4CAF50' }}>({parseFloat(c.avg_score!.toString()).toFixed(1)})</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>No other submissions meet the 30/50 threshold yet.</p>
+                )}
+              </div>
+            </div>
+          )}
+
         {/* LEADERBOARD/LIST */}
         <div className="card">
           <h2 className="text-xl fw-bold mb-4">Bounty Leaderboard</h2>
@@ -287,7 +362,7 @@ export default function Home() {
             {submissions.map(sub => (
               <div key={sub.id} style={{ 
                 background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
-                borderLeft: sub.avg_score && sub.avg_score >= 28 ? '4px solid #4CAF50' : '4px solid var(--glass-border)',
+                borderLeft: sub.avg_score && sub.avg_score >= 30 ? '4px solid #4CAF50' : '4px solid var(--glass-border)',
                 display: 'flex', flexDirection: 'column'
               }}>
                 <div style={{ 
@@ -300,7 +375,7 @@ export default function Home() {
                   <p className="text-sm mt-1">Status: {sub.score_count} judge(s) voted</p>
                 </div>
                 <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                  <div className="text-xl fw-bold" style={{ color: sub.avg_score && sub.avg_score >= 28 ? '#4CAF50' : 'var(--white)' }}>
+                  <div className="text-xl fw-bold" style={{ color: sub.avg_score && sub.avg_score >= 30 ? '#4CAF50' : 'var(--white)' }}>
                     {sub.avg_score ? parseFloat(sub.avg_score.toString()).toFixed(1) : '--'}/50
                   </div>
                   {!isDeadlinePassed && (
@@ -365,6 +440,8 @@ export default function Home() {
             {submissions.length === 0 && <p style={{ color: '#aaa' }}>No submissions yet.</p>}
           </div>
         </div>
+
+        </div>
       </div>
 
       {/* SCORING MODAL */}
@@ -376,7 +453,7 @@ export default function Home() {
         }}>
           <div className="card" style={{ width: '600px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden' }}>
             <h2 className="text-xl fw-bold mb-2">Evaluate Submission</h2>
-            <p className="text-sm mb-4" style={{ color: '#aaa' }}>Score 1-10 on each criteria (Max 50). Threshold for raffle: 28+.</p>
+            <p className="text-sm mb-4" style={{ color: '#aaa' }}>Score 1-10 on each criteria (Max 50). Threshold for raffle: 30+.</p>
 
             {[
               { 
